@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub get)",
+      "Bash(/home/brindaponkiya/fvm/versions/3.41.0/bin/flutter pub get)"
+    ]
+  }
+}
