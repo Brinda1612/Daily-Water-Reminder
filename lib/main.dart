@@ -18,8 +18,9 @@ void main() async {
     
     // Initialize Services
     await NotificationService.init();
+    await NotificationService.requestPermissions();
     try {
-      await NotificationService.scheduleReminders();
+      await NotificationService.scheduleReminders(intervalMinutes: 10);
     } catch (e) {
       debugPrint('Failed to schedule reminders: $e');
     }
