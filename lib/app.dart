@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'features/water/bloc/water_bloc.dart';
+import 'features/water/bloc/water_state.dart';
 import 'features/water/screens/home_screen.dart';
+import 'features/water/screens/onboarding_screen.dart';
 
 class WaterReminderApp extends StatelessWidget {
   const WaterReminderApp({super.key});
@@ -29,7 +33,14 @@ class WaterReminderApp extends StatelessWidget {
           ),
         ),
       ),
-      home: HomeScreen(),
+      home: BlocBuilder<WaterBloc, WaterState>(
+        builder: (context, state) {
+          if (!state.onboardingCompleted) {
+            return const OnboardingScreen();
+          }
+          return const HomeScreen();
+        },
+      ),
     );
   }
 }
