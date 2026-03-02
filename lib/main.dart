@@ -18,9 +18,18 @@ void main() async {
     
     // Initialize Services
     await NotificationService.init();
-    await NotificationService.requestPermissions();
+    final permissions = await NotificationService.requestPermissions();
+    debugPrint('Permissions status: $permissions');
+    
     try {
-      await NotificationService.scheduleReminders(intervalMinutes: 10);
+      final settingsBox = await Hive.openBox('settings_box');
+      int minutes = settingsBox.get('reminderMinutes', defaultValue: -1) as int;
+      if (minutes == -1) {
+        // Migration/Default
+        final hours = settingsBox.get('reminderHours', defaultValue: 1) as int;
+        minutes = hours * 60;
+      }
+      await NotificationService.scheduleReminders(intervalMinutes: minutes);
     } catch (e) {
       debugPrint('Failed to schedule reminders: $e');
     }

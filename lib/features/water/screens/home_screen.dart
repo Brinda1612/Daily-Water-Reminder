@@ -41,8 +41,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         appBar: AppBar(
           backgroundColor: const Color(0xFF2196F3),
           elevation: 0,
-          title: const TabBar(
+          toolbarHeight: 0,
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
+            indicatorSize: TabBarIndicatorSize.tab,
             tabs: [
               Tab(text: 'Home', icon: Icon(Icons.water_drop)),
               Tab(text: 'History', icon: Icon(Icons.history)),

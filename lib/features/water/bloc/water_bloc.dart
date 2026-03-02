@@ -28,7 +28,14 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     final weight = settingsBox.get('weight', defaultValue: 0.0) as double;
     final height = settingsBox.get('height', defaultValue: 0.0) as double;
     final onboardingCompleted = settingsBox.get('onboardingCompleted', defaultValue: false) as bool;
-    final reminderHours = settingsBox.get('reminderHours', defaultValue: 1) as int;
+    
+    // Migration: Check for reminderHours and convert to minutes if reminderMinutes doesn't exist
+    int reminderMinutes = settingsBox.get('reminderMinutes', defaultValue: -1) as int;
+    if (reminderMinutes == -1) {
+      final oldHours = settingsBox.get('reminderHours', defaultValue: 1) as int;
+      reminderMinutes = oldHours * 60;
+      await settingsBox.put('reminderMinutes', reminderMinutes);
+    }
 
     final box = await Hive.openBox<WaterModel>(boxName);
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -59,7 +66,7 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
       weight: weight,
       height: height,
       onboardingCompleted: onboardingCompleted,
-      reminderHours: reminderHours,
+      reminderMinutes: reminderMinutes,
       history: history,
     ));
   }
@@ -115,9 +122,14 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
 
   Future<void> _onSetReminderInterval(SetReminderInterval event, Emitter<WaterState> emit) async {
     final settingsBox = Hive.box(settingsBoxName);
-    await settingsBox.put('reminderHours', event.hours);
-    await NotificationService.scheduleReminders(intervalHours: event.hours);
-    emit(state.copyWith(reminderHours: event.hours));
+    await settingsBox.put('reminderMinutes', event.minutes);
+    try {
+      await NotificationService.scheduleReminders(intervalMinutes: event.minutes);
+    } catch (e) {
+      print('CRITICAL: Error scheduling reminders in WaterBloc: $e');
+      // In a real app, we might add an error state to the BLoC to show a SnackBar
+    }
+    emit(state.copyWith(reminderMinutes: event.minutes));
   }
 
   Future<void> _onCompleteOnboarding(CompleteOnboarding event, Emitter<WaterState> emit) async {

@@ -5,7 +5,7 @@ class WaterState extends Equatable {
   final int todayIntake;
   final int dailyGoal;
   final int selectedCupSize;
-  final int reminderHours;
+  final int reminderMinutes;
   final double weight; // in kg
   final double height; // in cm
   final bool onboardingCompleted;
@@ -15,7 +15,7 @@ class WaterState extends Equatable {
     this.todayIntake = 0,
     this.dailyGoal = 3000,
     this.selectedCupSize = 200,
-    this.reminderHours = 1,
+    this.reminderMinutes = 60,
     this.weight = 0,
     this.height = 0,
     this.onboardingCompleted = false,
@@ -28,7 +28,7 @@ class WaterState extends Equatable {
     int? todayIntake,
     int? dailyGoal,
     int? selectedCupSize,
-    int? reminderHours,
+    int? reminderMinutes,
     double? weight,
     double? height,
     bool? onboardingCompleted,
@@ -38,7 +38,7 @@ class WaterState extends Equatable {
       todayIntake: todayIntake ?? this.todayIntake,
       dailyGoal: dailyGoal ?? this.dailyGoal,
       selectedCupSize: selectedCupSize ?? this.selectedCupSize,
-      reminderHours: reminderHours ?? this.reminderHours,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
       weight: weight ?? this.weight,
       height: height ?? this.height,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
@@ -51,7 +51,7 @@ class WaterState extends Equatable {
         todayIntake,
         dailyGoal,
         selectedCupSize,
-        reminderHours,
+        reminderMinutes,
         weight,
         height,
         onboardingCompleted,

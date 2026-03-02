@@ -36,11 +36,11 @@ class UpdateDailyGoal extends WaterEvent {
 class ClearHistory extends WaterEvent {}
 
 class SetReminderInterval extends WaterEvent {
-  final int hours;
-  const SetReminderInterval(this.hours);
+  final int minutes;
+  const SetReminderInterval(this.minutes);
 
   @override
-  List<Object?> get props => [hours];
+  List<Object?> get props => [minutes];
 }
 
 class CompleteOnboarding extends WaterEvent {

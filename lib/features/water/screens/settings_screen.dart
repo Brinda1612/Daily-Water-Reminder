@@ -24,6 +24,74 @@ class SettingsScreen extends StatelessWidget {
             const Divider(),
             _buildSectionHeader('Notifications'),
             _buildNotificationTile(context, state),
+            FutureBuilder<Map<String, bool>>(
+              future: NotificationService.requestPermissions(),
+              builder: (context, snapshot) {
+                final status = snapshot.data;
+                final notificationsOn = status?['notifications'] ?? false;
+                final exactAlarmOn = status?['exactAlarm'] ?? false;
+                
+                return Column(
+                  children: [
+                    FutureBuilder<int>(
+                      future: NotificationService.getPendingNotificationCount(),
+                      builder: (context, countSnapshot) {
+                        final count = countSnapshot.data ?? 0;
+                        return ListTile(
+                          leading: Icon(
+                            count > 0 ? Icons.schedule_outlined : Icons.timer_off_outlined,
+                            color: count > 0 ? Colors.green : Colors.red,
+                          ),
+                          title: const Text('Pending Reminders'),
+                          subtitle: Text('$count notifications currently queued'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.refresh),
+                            onPressed: () async {
+                              final currentMinutes = state.reminderMinutes;
+                              await NotificationService.scheduleReminders(intervalMinutes: currentMinutes);
+                              // Force rebuild to update count
+                              (context as Element).markNeedsBuild();
+                            },
+                          ),
+                        );
+                      }
+                    ),
+                    ListTile(
+                      leading: Icon(
+                        exactAlarmOn ? Icons.alarm_on_outlined : Icons.alarm_add_outlined,
+                        color: exactAlarmOn ? Colors.green : Colors.orange,
+                      ),
+                      title: const Text('Exact Alarm Permission'),
+                      subtitle: Text(exactAlarmOn ? 'Status: Granted (Precise reminders)' : 'Status: Required (For timely reminders)'),
+                      trailing: exactAlarmOn ? const Icon(Icons.check_circle_outline, color: Colors.green) : TextButton(
+                        onPressed: () => NotificationService.openExactAlarmSettings(),
+                        child: const Text('GRANT'),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsButton(
+                      'Battery Optimization',
+                      'Avoid background kills (Recommended)',
+                      Icons.battery_charging_full_outlined,
+                      () => NotificationService.openBatteryOptimizationSettings(),
+                    ),
+                    _buildSettingsButton(
+                      'Test Alarm (10s)',
+                      'Schedule alarm for 10 seconds from now',
+                      Icons.timer_outlined,
+                      () async {
+                        await NotificationService.showTestAlarm();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Test alarm scheduled for 10 seconds! Put app in background now.')),
+                        );
+                        // Force rebuild to update count
+                        (context as Element).markNeedsBuild();
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.bug_report_outlined),
               title: const Text('Test Notification'),
@@ -110,27 +178,47 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildNotificationTile(BuildContext context, WaterState state) {
+    String frequencyText;
+    if (state.reminderMinutes < 60) {
+      frequencyText = 'Notify every ${state.reminderMinutes} minutes';
+    } else {
+      final hours = state.reminderMinutes / 60;
+      frequencyText = 'Notify every ${hours.toStringAsFixed(hours.truncateToDouble() == hours ? 0 : 1)} hour${hours == 1 ? '' : 's'}';
+    }
+
     return ListTile(
       leading: const Icon(Icons.notifications_outlined),
       title: const Text('Reminder Frequency'),
-      subtitle: Text('Notify every ${state.reminderHours} hour${state.reminderHours > 1 ? 's' : ''}'),
+      subtitle: Text(frequencyText),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => _showFrequencyDialog(context, state),
     );
   }
 
   void _showFrequencyDialog(BuildContext context, WaterState state) {
+    final intervals = [
+      {'label': 'Every 1 minute (Test)', 'value': 1},
+      {'label': 'Every 15 minutes', 'value': 15},
+      {'label': 'Every 30 minutes', 'value': 30},
+      {'label': 'Every 45 minutes', 'value': 45},
+      {'label': 'Every 1 hour', 'value': 60},
+      {'label': 'Every 1.5 hours', 'value': 90},
+      {'label': 'Every 2 hours', 'value': 120},
+      {'label': 'Every 3 hours', 'value': 180},
+      {'label': 'Every 4 hours', 'value': 240},
+    ];
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Reminder Frequency'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [1, 2, 3, 4, 6].map((hour) {
+          children: intervals.map((interval) {
             return RadioListTile<int>(
-              title: Text('Every $hour hour${hour > 1 ? 's' : ''}'),
-              value: hour,
-              groupValue: state.reminderHours,
+              title: Text(interval['label'] as String),
+              value: interval['value'] as int,
+              groupValue: state.reminderMinutes,
               onChanged: (val) {
                 if (val != null) {
                   context.read<WaterBloc>().add(SetReminderInterval(val));
@@ -230,6 +318,16 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSettingsButton(String title, String subtitle, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.blue),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.open_in_new, size: 20),
+      onTap: onTap,
     );
   }
 }
