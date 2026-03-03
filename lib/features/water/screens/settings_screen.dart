@@ -47,12 +47,15 @@ class SettingsScreen extends StatelessWidget {
                             color: count > 0 ? Colors.green : Colors.red,
                           ),
                           title: const Text('Pending Reminders'),
-                          subtitle: Text('$count notifications currently queued'),
+                          subtitle: Text('$count notifications currently queued. If 0, tap refresh.'),
                           trailing: IconButton(
-                            icon: const Icon(Icons.refresh),
+                            icon: const Icon(Icons.refresh, color: Colors.blue),
                             onPressed: () async {
                               final currentMinutes = state.reminderMinutes;
                               await NotificationService.scheduleReminders(intervalMinutes: currentMinutes);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Reminders rescheduled!')),
+                              );
                               // Force rebuild to update count
                               (context as Element).markNeedsBuild();
                             },
@@ -68,7 +71,17 @@ class SettingsScreen extends StatelessWidget {
                       title: Text(l10n.exactAlarmPermission),
                       subtitle: Text(exactAlarmOn ? l10n.statusGranted : l10n.statusRequired),
                       trailing: exactAlarmOn ? const Icon(Icons.check_circle_outline, color: Colors.green) : TextButton(
-                        onPressed: () => NotificationService.openExactAlarmSettings(),
+                        onPressed: () async {
+                          final success = await NotificationService.openExactAlarmSettings();
+                          if (!success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not open settings. Please check your app settings manually.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
                         child: Text(l10n.grant),
                       ),
                     ),
@@ -77,7 +90,17 @@ class SettingsScreen extends StatelessWidget {
                       l10n.batteryOptimization,
                       'Avoid background kills (Recommended)',
                       Icons.battery_charging_full_outlined,
-                      () => NotificationService.openBatteryOptimizationSettings(),
+                      () async {
+                        final success = await NotificationService.openBatteryOptimizationSettings();
+                        if (!success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Could not open settings. Please check your app settings manually.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
                     ),
                     _buildSettingsButton(
                       l10n.testAlarm,
@@ -332,7 +355,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsButton(String title, String subtitle, IconData icon, VoidCallback onTap) {
+  Widget _buildSettingsButton(String title, String subtitle, IconData icon, VoidCallback? onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.blue),
       title: Text(title),

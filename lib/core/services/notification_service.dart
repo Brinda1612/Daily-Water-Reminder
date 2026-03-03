@@ -57,10 +57,12 @@ class NotificationService {
     tz.initializeTimeZones();
     try {
       final String timeZoneName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
+      final location = tz.getLocation(timeZoneName);
+      tz.setLocalLocation(location);
       print('Local timezone set to: $timeZoneName');
     } catch (e) {
-      print('Could not get local timezone, falling back: $e');
+      print('Could not get local timezone, falling back to UTC: $e');
+      tz.setLocalLocation(tz.UTC);
     }
   }
 
@@ -99,19 +101,23 @@ class NotificationService {
     };
   }
 
-  static Future<void> openBatteryOptimizationSettings() async {
+  static Future<bool> openBatteryOptimizationSettings() async {
     try {
-      await _settingsChannel.invokeMethod('openBatteryOptimizationSettings');
+      final bool? result = await _settingsChannel.invokeMethod<bool>('openBatteryOptimizationSettings');
+      return result ?? false;
     } catch (e) {
       print('Error opening battery settings: $e');
+      return false;
     }
   }
 
-  static Future<void> openExactAlarmSettings() async {
+  static Future<bool> openExactAlarmSettings() async {
     try {
-      await _settingsChannel.invokeMethod('openExactAlarmSettings');
+      final bool? result = await _settingsChannel.invokeMethod<bool>('openExactAlarmSettings');
+      return result ?? false;
     } catch (e) {
       print('Error opening exact alarm settings: $e');
+      return false;
     }
   }
 
@@ -182,7 +188,7 @@ class NotificationService {
           'Stay hydrated! It is time for a glass of water.',
           scheduledTime,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.alarmClock,
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
         );
