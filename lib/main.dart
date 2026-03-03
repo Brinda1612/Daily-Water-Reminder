@@ -24,9 +24,8 @@ void main() async {
       final settingsBox = await Hive.openBox('settings_box');
       int minutes = settingsBox.get('reminderMinutes', defaultValue: -1) as int;
       if (minutes == -1) {
-        // Migration/Default
-        final hours = settingsBox.get('reminderHours', defaultValue: 1) as int;
-        minutes = hours * 60;
+        // Default to 2 hours (120 minutes)
+        minutes = 120;
       }
       await NotificationService.scheduleReminders(intervalMinutes: minutes);
     } catch (e) {

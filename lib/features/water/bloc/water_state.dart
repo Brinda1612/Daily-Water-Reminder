@@ -16,7 +16,7 @@ class WaterState extends Equatable {
     this.todayIntake = 0,
     this.dailyGoal = 3000,
     this.selectedCupSize = 200,
-    this.reminderMinutes = 60,
+    this.reminderMinutes = 120,
     this.weight = 0,
     this.height = 0,
     this.onboardingCompleted = false,
