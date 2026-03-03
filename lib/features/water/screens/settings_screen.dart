@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:smart_task/l10n/app_localizations.dart';
 import '../../../app.dart';
+import '../../../l10n/app_localizations.dart';
 import '../bloc/water_bloc.dart';
 import '../bloc/water_event.dart';
 import '../bloc/water_state.dart';

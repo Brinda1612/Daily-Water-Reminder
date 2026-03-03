@@ -5,7 +5,7 @@ import 'features/water/bloc/water_bloc.dart';
 import 'features/water/bloc/water_state.dart';
 import 'features/water/screens/home_screen.dart';
 import 'features/water/screens/onboarding_screen.dart';
-import 'package:smart_task/l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 class WaterReminderApp extends StatelessWidget {
   const WaterReminderApp({super.key});

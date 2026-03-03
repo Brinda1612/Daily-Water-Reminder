@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:smart_task/l10n/app_localizations.dart';
 import '../../../app.dart';
+import '../../../l10n/app_localizations.dart';
 import '../bloc/water_bloc.dart';
 import '../bloc/water_state.dart';
 import '../model/water_model.dart';
@@ -317,18 +317,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            item.date,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: WaterReminderApp.deepWater,
+                          Expanded(
+                            child: Text(
+                              item.date,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: WaterReminderApp.deepWater,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (isToday) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: WaterReminderApp.primaryWater,
                                 borderRadius: BorderRadius.circular(8),
@@ -342,7 +345,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 ),
                               ),
                             ),
-                          ],
+                          ]
                         ],
                       ),
                       const SizedBox(height: 6),

@@ -17,9 +17,7 @@ void main() async {
     
     // Initialize Services
     await NotificationService.init();
-    final permissions = await NotificationService.requestPermissions();
-    debugPrint('Permissions status: $permissions');
-    
+
     try {
       final settingsBox = await Hive.openBox('settings_box');
       int minutes = settingsBox.get('reminderMinutes', defaultValue: -1) as int;
