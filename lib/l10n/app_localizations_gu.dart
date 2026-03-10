@@ -224,4 +224,10 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get finish => 'પૂર્ણ';
+
+  @override
+  String get notSet => 'સેટ નથી';
+
+  @override
+  String get custom => 'કસ્ટમ';
 }

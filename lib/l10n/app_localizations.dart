@@ -519,6 +519,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish'**
   String get finish;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Set'**
+  String get notSet;
+
+  /// No description provided for @custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get custom;
 }
 
 class _AppLocalizationsDelegate

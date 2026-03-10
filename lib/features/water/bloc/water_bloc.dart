@@ -20,17 +20,21 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     on<CompleteOnboarding>(_onCompleteOnboarding);
     on<ResetWater>(_onResetToday);
     on<ChangeLanguage>(_onChangeLanguage);
+    on<DeleteCustomCup>(_onDeleteCustomCup);
   }
 
   Future<void> _onInit(InitWater event, Emitter<WaterState> emit) async {
     await Hive.openBox(settingsBoxName);
     final settingsBox = Hive.box(settingsBoxName);
-    
+
     final weight = settingsBox.get('weight', defaultValue: 0.0) as double;
     final height = settingsBox.get('height', defaultValue: 0.0) as double;
     final onboardingCompleted = settingsBox.get('onboardingCompleted', defaultValue: false) as bool;
     final locale = settingsBox.get('locale', defaultValue: 'en') as String;
-    
+    final selectedCupSize = settingsBox.get('selectedCupSize', defaultValue: 200) as int;
+    final customCupsList = settingsBox.get('customCups', defaultValue: <int>[]) as List;
+    final customCups = customCupsList.cast<int>();
+
     // Migration: Check for reminderHours and convert to minutes if reminderMinutes doesn't exist
     int reminderMinutes = settingsBox.get('reminderMinutes', defaultValue: -1) as int;
     if (reminderMinutes == -1) {
@@ -44,7 +48,8 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     final data = box.get(today);
 
     // Initial goal calculation if stats exist but goal not set
-    int goal = settingsBox.get('dailyGoal', defaultValue: 3000) as int;
+    // Initial goal calculation if stats exist but goal not set
+    int goal = settingsBox.get('dailyGoal', defaultValue: 0) as int;
     if (onboardingCompleted && weight > 0) {
        // Calculation: weight * 35 (standard recommended intake)
        goal = (weight * 35).round();
@@ -71,6 +76,8 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
       reminderMinutes: reminderMinutes,
       history: history,
       locale: locale,
+      selectedCupSize: selectedCupSize,
+      customCups: customCups,
     ));
   }
 
@@ -94,8 +101,23 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     ));
   }
 
-  void _onSetCupSize(SetCupSize event, Emitter<WaterState> emit) {
-    emit(state.copyWith(selectedCupSize: event.size));
+  Future<void> _onSetCupSize(SetCupSize event, Emitter<WaterState> emit) async {
+    final settingsBox = Hive.box(settingsBoxName);
+    await settingsBox.put('selectedCupSize', event.size);
+    
+    final standardSizes = [100, 125, 150, 175, 200, 250, 300, 400];
+    List<int> updatedCustomCups = List.from(state.customCups);
+    
+    if (!standardSizes.contains(event.size) && !updatedCustomCups.contains(event.size)) {
+      updatedCustomCups.add(event.size);
+      updatedCustomCups.sort();
+      await settingsBox.put('customCups', updatedCustomCups);
+    }
+    
+    emit(state.copyWith(
+      selectedCupSize: event.size,
+      customCups: updatedCustomCups,
+    ));
   }
 
   Future<void> _onUpdateDailyGoal(UpdateDailyGoal event, Emitter<WaterState> emit) async {
@@ -185,5 +207,23 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     final settingsBox = Hive.box(settingsBoxName);
     await settingsBox.put('locale', event.locale);
     emit(state.copyWith(locale: event.locale));
+  }
+
+  Future<void> _onDeleteCustomCup(DeleteCustomCup event, Emitter<WaterState> emit) async {
+    final settingsBox = Hive.box(settingsBoxName);
+    List<int> updatedCustomCups = List.from(state.customCups);
+    updatedCustomCups.remove(event.size);
+    await settingsBox.put('customCups', updatedCustomCups);
+    
+    int newSelectedSize = state.selectedCupSize;
+    if (newSelectedSize == event.size) {
+      newSelectedSize = 200; // Reset to default if deleted cup was selected
+      await settingsBox.put('selectedCupSize', newSelectedSize);
+    }
+    
+    emit(state.copyWith(
+      customCups: updatedCustomCups,
+      selectedCupSize: newSelectedSize,
+    ));
   }
 }

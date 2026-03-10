@@ -157,6 +157,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 }
 
 class HomeView extends StatefulWidget {
+  static const List<int> standardCupSizes = [100, 125, 150, 175, 200, 250, 300, 400];
+  
   final AnimationController controller;
   final AnimationController celebrationController;
   final VoidCallback onWaterSound;
@@ -224,7 +226,7 @@ class _HomeViewState extends State<HomeView> {
                     _buildGoalCard(context, state),
                     const SizedBox(height: 20),
                     _buildQuickActions(context, state),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -242,6 +244,11 @@ class _HomeViewState extends State<HomeView> {
       child: AnimatedBuilder(
         animation: widget.celebrationController,
         builder: (context, child) {
+          // Only show celebration overlay when animation is actually running
+          if (widget.celebrationController.value <= 0.01) {
+            return const SizedBox.shrink();
+          }
+
           return Opacity(
             opacity: 1 - widget.celebrationController.value.clamp(0.0, 0.8),
             child: IgnorePointer(
@@ -376,10 +383,8 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildMascotSection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
-      decoration: WaterReminderApp.getGlassBox(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           _buildWaveMascot(),
@@ -766,127 +771,162 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _showCupSelectionSheet(BuildContext context, WaterState state) {
-    final sizes = [100, 125, 150, 175, 200, 250, 300, 400];
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Select Cup Size',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: WaterReminderApp.deepWater,
-                      ),
+      builder: (sheetContext) => BlocBuilder<WaterBloc, WaterState>(
+        builder: (context, state) {
+          final allCups = [...HomeView.standardCupSizes, ...state.customCups];
+          
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(sheetContext),
-                      icon: const Icon(Icons.close),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Select Cup Size',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: WaterReminderApp.deepWater,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      childAspectRatio: 1,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                    ),
+                    itemCount: allCups.length + 1,
+                    itemBuilder: (itemContext, index) {
+                      if (index < allCups.length) {
+                        final size = allCups[index];
+                        final isSelected = state.selectedCupSize == size;
+                        final isCustom = !HomeView.standardCupSizes.contains(size);
+                        return _buildCupItem(context, state, size, isSelected, isCustom: isCustom);
+                      } else {
+                        return _buildCustomCupItem(context, state);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-              GridView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  childAspectRatio: 1,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                ),
-                itemCount: sizes.length + 1,
-                itemBuilder: (itemContext, index) {
-                  if (index < sizes.length) {
-                    final size = sizes[index];
-                    final isSelected = state.selectedCupSize == size;
-                    return _buildCupItem(itemContext, state, size, isSelected);
-                  } else {
-                    return _buildCustomCupItem(itemContext, state);
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildCupItem(BuildContext context, WaterState state, int size, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        context.read<WaterBloc>().add(SetCupSize(size));
-        Navigator.pop(context);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? const LinearGradient(
-                  colors: [WaterReminderApp.primaryWaterLight, WaterReminderApp.primaryWater],
-                )
-              : null,
-          color: isSelected ? null : WaterReminderApp.primaryWater.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? WaterReminderApp.primaryWater : WaterReminderApp.primaryWater.withOpacity(0.3),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.local_cafe,
-              size: 24,
-              color: isSelected ? Colors.white : WaterReminderApp.primaryWater,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '$size',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : WaterReminderApp.primaryWaterDark,
+  Widget _buildCupItem(BuildContext context, WaterState state, int size, bool isSelected, {bool isCustom = false}) {
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: () {
+            context.read<WaterBloc>().add(SetCupSize(size));
+            Navigator.pop(context);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? const LinearGradient(
+                      colors: [WaterReminderApp.primaryWaterLight, WaterReminderApp.primaryWater],
+                    )
+                  : null,
+              color: isSelected ? null : WaterReminderApp.primaryWater.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? WaterReminderApp.primaryWater : WaterReminderApp.primaryWater.withOpacity(0.3),
+                width: isSelected ? 2 : 1,
               ),
             ),
-          ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.local_cafe,
+                  size: 24,
+                  color: isSelected ? Colors.white : WaterReminderApp.primaryWater,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$size',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : WaterReminderApp.primaryWaterDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+        if (isCustom)
+          Positioned(
+            top: -5,
+            right: -5,
+            child: GestureDetector(
+              onTap: () {
+                context.read<WaterBloc>().add(DeleteCustomCup(size));
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.remove,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildCustomCupItem(BuildContext context, WaterState state) {
     return GestureDetector(
       onTap: () {
+        final bloc = context.read<WaterBloc>();
         Navigator.pop(context);
-        _showCustomAmountDialog(context, state);
+        _showCustomAmountDialog(context, state, bloc);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -918,36 +958,39 @@ class _HomeViewState extends State<HomeView> {
       );
   }
 
-  void _showCustomAmountDialog(BuildContext context, WaterState state) {
+  void _showCustomAmountDialog(BuildContext context, WaterState state, WaterBloc waterBloc) {
     final controller = TextEditingController();
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(AppLocalizations.of(context)!.customiseCup),
+        title: Text(l10n.customiseCup),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            hintText: AppLocalizations.of(context)!.enterAmount,
+            hintText: l10n.enterAmount,
             suffixText: 'ml',
+            filled: true,
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AppLocalizations.of(context)!.cancel),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               final val = int.tryParse(controller.text);
               if (val != null && val > 0) {
-                context.read<WaterBloc>().add(SetCupSize(val));
+                waterBloc.add(SetCupSize(val));
                 Navigator.pop(dialogContext);
               }
             },
-            child: Text(AppLocalizations.of(context)!.set),
+            child: Text(l10n.set),
           ),
         ],
       ),

@@ -72,5 +72,7 @@
   "personalizedPlan": "व्यक्तिगत योजना",
   "yourDailyGoal": "आपका दैनिक लक्ष्य",
   "next": "अगला",
-  "finish": "समाप्त"
+  "finish": "समाप्त",
+  "notSet": "सेट नहीं है",
+  "custom": "कस्टम"
 }

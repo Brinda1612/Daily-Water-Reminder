@@ -61,3 +61,11 @@ class ChangeLanguage extends WaterEvent {
   @override
   List<Object?> get props => [locale];
 }
+
+class DeleteCustomCup extends WaterEvent {
+  final int size;
+  const DeleteCustomCup(this.size);
+
+  @override
+  List<Object?> get props => [size];
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../../../app.dart';
 
 class WavePainter extends CustomPainter {
   final double progress;
@@ -9,8 +10,16 @@ class WavePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Clip to circle with slight inset to avoid border cutting
+    final clipPath = Path()
+      ..addOval(Rect.fromCircle(
+        center: Offset(size.width / 2, size.height / 2),
+        radius: size.width / 2 - 2,
+      ));
+    canvas.clipPath(clipPath);
+
     final paint = Paint()
-      ..color = Colors.blue.withOpacity(0.4)
+      ..color = WaterReminderApp.primaryWater.withOpacity(0.5)
       ..style = PaintingStyle.fill;
 
     final path = Path();
@@ -32,15 +41,11 @@ class WavePainter extends CustomPainter {
     path.lineTo(0, height);
     path.close();
 
-    // Clip to circle
-    final clipPath = Path()..addOval(Rect.fromLTWH(0, 0, width, height));
-    canvas.clipPath(clipPath);
-
     canvas.drawPath(path, paint);
 
     // Draw a second, slightly different wave for depth
     final paint2 = Paint()
-      ..color = Colors.blue.withOpacity(0.6)
+      ..color = WaterReminderApp.primaryWaterDark.withOpacity(0.7)
       ..style = PaintingStyle.fill;
 
     final path2 = Path();

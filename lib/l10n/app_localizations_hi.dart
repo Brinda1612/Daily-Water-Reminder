@@ -223,4 +223,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get finish => 'समाप्त';
+
+  @override
+  String get notSet => 'सेट नहीं है';
+
+  @override
+  String get custom => 'कस्टम';
 }

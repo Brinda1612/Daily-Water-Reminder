@@ -68,5 +68,7 @@
   "personalizedPlan": "Personalized Plan",
   "yourDailyGoal": "Your Daily Goal",
   "next": "Next",
-  "finish": "Finish"
+  "finish": "Finish",
+  "notSet": "Not Set",
+  "custom": "Custom"
 }

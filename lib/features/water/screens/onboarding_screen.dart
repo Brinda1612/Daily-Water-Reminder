@@ -254,7 +254,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildGoalStep() {
-    final weight = double.tryParse(_weightController.text) ?? 0;
+    final weight = double.tryParse(_weightController.text) ?? 70.0;
     final goalValue = (weight * 35).round();
 
     return SingleChildScrollView(

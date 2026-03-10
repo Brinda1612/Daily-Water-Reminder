@@ -68,5 +68,7 @@
   "startDrinking": "તમારી પ્રગતિ અહીં જોવા માટે પાણી પીવાનું શરૂ કરો!",
   "today": "આજે",
   "yesterday": "ગઈકાલે",
-  "intakeHistory": "પીવાનો ઈતિહાસ"
+  "intakeHistory": "પીવાનો ઈતિહાસ",
+  "notSet": "સેટ નથી",
+  "custom": "કસ્ટમ"
 }

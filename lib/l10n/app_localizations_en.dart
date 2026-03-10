@@ -222,4 +222,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get finish => 'Finish';
+
+  @override
+  String get notSet => 'Not Set';
+
+  @override
+  String get custom => 'Custom';
 }

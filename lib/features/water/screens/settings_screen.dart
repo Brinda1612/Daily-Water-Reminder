@@ -103,6 +103,7 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildGoalCard(BuildContext context, WaterState state) {
     final l10n = AppLocalizations.of(context)!;
+    final displayGoal = state.dailyGoal > 0 ? state.dailyGoal : 3000;
     return _buildSettingsCard(
       context,
       child: ListTile(
@@ -118,7 +119,7 @@ class SettingsScreen extends StatelessWidget {
           child: const Icon(Icons.flag_outlined, color: Colors.white),
         ),
         title: Text(l10n.dailyGoal),
-        subtitle: Text('${state.dailyGoal} ${l10n.ml}'),
+        subtitle: Text(state.dailyGoal > 0 ? '$displayGoal ${l10n.ml}' : l10n.notSet),
         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
         onTap: () => _showGoalDialog(context, state),
       ),
@@ -291,6 +292,8 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildPersonalInfoCard(BuildContext context, WaterState state) {
     final l10n = AppLocalizations.of(context)!;
+    final displayWeight = state.weight > 0 ? state.weight : 70.0;
+    final displayHeight = state.height > 0 ? state.height : 170.0;
     return _buildSettingsCard(
       context,
       child: Column(
@@ -299,16 +302,16 @@ class SettingsScreen extends StatelessWidget {
             context,
             icon: Icons.monitor_weight_outlined,
             title: l10n.weight,
-            value: '${state.weight} ${l10n.kg}',
-            onTap: () => _showStatDialog(context, l10n.weight, state.weight, true),
+            value: state.weight > 0 ? '$displayWeight ${l10n.kg}' : l10n.notSet,
+            onTap: () => _showStatDialog(context, l10n.weight, state.weight > 0 ? state.weight : 70.0, true),
           ),
           const Divider(height: 20),
           _buildInfoTile(
             context,
             icon: Icons.height_outlined,
             title: l10n.height,
-            value: '${state.height} ${l10n.cm}',
-            onTap: () => _showStatDialog(context, l10n.height, state.height, false),
+            value: state.height > 0 ? '$displayHeight ${l10n.cm}' : l10n.notSet,
+            onTap: () => _showStatDialog(context, l10n.height, state.height > 0 ? state.height : 170.0, false),
           ),
         ],
       ),
@@ -481,7 +484,8 @@ class SettingsScreen extends StatelessWidget {
 
   void _showGoalDialog(BuildContext context, WaterState state) {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: state.dailyGoal.toString());
+    final initialGoal = state.dailyGoal > 0 ? state.dailyGoal : 3000;
+    final controller = TextEditingController(text: initialGoal.toString());
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -525,6 +529,7 @@ class SettingsScreen extends StatelessWidget {
       {'label': 'Every 2 hours', 'value': 120},
       {'label': 'Every 3 hours', 'value': 180},
       {'label': 'Every 4 hours', 'value': 240},
+      {'label': l10n.custom, 'value': -1},
     ];
 
     showDialog(
@@ -540,8 +545,12 @@ class SettingsScreen extends StatelessWidget {
             final isSelected = state.reminderMinutes == value;
             return InkWell(
               onTap: () {
-                context.read<WaterBloc>().add(SetReminderInterval(value));
                 Navigator.pop(dialogContext);
+                if (value == -1) {
+                  _showCustomFrequencyDialog(context, state);
+                } else {
+                  context.read<WaterBloc>().add(SetReminderInterval(value));
+                }
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -693,6 +702,42 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      ),
+    );
+  }
+
+  void _showCustomFrequencyDialog(BuildContext context, WaterState state) {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController(text: state.reminderMinutes.toString());
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('${l10n.custom} ${l10n.reminderFrequency}'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            hintText: 'Enter minutes',
+            suffixText: 'min',
+            filled: true,
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(l10n.cancel)),
+          ElevatedButton(
+            onPressed: () {
+              final minutes = int.tryParse(controller.text);
+              if (minutes != null && minutes > 0) {
+                context.read<WaterBloc>().add(SetReminderInterval(minutes));
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: Text(l10n.save),
+          ),
+        ],
       ),
     );
   }
