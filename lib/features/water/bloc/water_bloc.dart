@@ -23,6 +23,117 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     on<DeleteCustomCup>(_onDeleteCustomCup);
   }
 
+  // Calculate current streak (consecutive days meeting goal)
+  int _calculateCurrentStreak(List<WaterModel> history) {
+    if (history.isEmpty) return 0;
+
+    final today = DateTime.now();
+    int streak = 0;
+    DateTime checkDate = today;
+
+    // Check if today's goal is met
+    final todayData = history.firstWhere(
+      (d) => d.date == DateFormat('yyyy-MM-dd').format(today),
+      orElse: () => WaterModel(date: '', intake: 0, goal: 1),
+    );
+
+    if (todayData.intake >= todayData.goal && todayData.goal > 0) {
+      streak++;
+    } else {
+      // If today's goal is not met, start checking from yesterday
+      checkDate = today.subtract(const Duration(days: 1));
+    }
+
+    // Check previous days
+    for (int i = 0; i < 365; i++) {
+      final dateStr = DateFormat('yyyy-MM-dd').format(checkDate);
+      final dayData = history.firstWhere(
+        (d) => d.date == dateStr,
+        orElse: () => WaterModel(date: '', intake: 0, goal: 1),
+      );
+
+      if (dayData.intake >= dayData.goal && dayData.goal > 0) {
+        streak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  }
+
+  // Calculate longest streak
+  int _calculateLongestStreak(List<WaterModel> history) {
+    if (history.isEmpty) return 0;
+
+    int longestStreak = 0;
+    int currentStreak = 0;
+
+    final sortedHistory = List<WaterModel>.from(history);
+    sortedHistory.sort((a, b) => a.date.compareTo(b.date));
+
+    DateTime? previousDate;
+    for (final data in sortedHistory) {
+      if (data.intake >= data.goal && data.goal > 0) {
+        final currentDate = DateFormat('yyyy-MM-dd').parse(data.date);
+
+        if (previousDate != null) {
+          final difference = currentDate.difference(previousDate).inDays;
+          if (difference == 1) {
+            currentStreak++;
+          } else if (difference > 1) {
+            currentStreak = 1;
+          }
+        } else {
+          currentStreak = 1;
+        }
+
+        previousDate = currentDate;
+        if (currentStreak > longestStreak) {
+          longestStreak = currentStreak;
+        }
+      } else {
+        currentStreak = 0;
+        previousDate = null;
+      }
+    }
+
+    return longestStreak;
+  }
+
+  // Generate weekly data for chart
+  List<WeeklyData> _generateWeeklyData(List<WaterModel> history, int defaultGoal) {
+    final weeklyData = <WeeklyData>[];
+    final today = DateTime.now();
+
+    for (int i = 6; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      final dayName = i == 0
+          ? 'Today'
+          : DateFormat('E').format(date);
+
+      final dayData = history.firstWhere(
+        (d) => d.date == dateStr,
+        orElse: () => WaterModel(date: dateStr, intake: 0, goal: defaultGoal),
+      );
+
+      final percentage = dayData.goal > 0
+          ? (dayData.intake / dayData.goal).clamp(0.0, 1.0)
+          : 0.0;
+
+      weeklyData.add(WeeklyData(
+        day: dayName,
+        intake: dayData.intake,
+        goal: dayData.goal,
+        percentage: percentage,
+      ));
+    }
+
+    return weeklyData;
+  }
+
   Future<void> _onInit(InitWater event, Emitter<WaterState> emit) async {
     await Hive.openBox(settingsBoxName);
     final settingsBox = Hive.box(settingsBoxName);
@@ -67,6 +178,11 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
     final history = box.values.toList();
     history.sort((a, b) => b.date.compareTo(a.date));
 
+    // Calculate streaks and weekly data
+    final currentStreak = _calculateCurrentStreak(history);
+    final longestStreak = _calculateLongestStreak(history);
+    final weeklyData = _generateWeeklyData(history, goal);
+
     emit(state.copyWith(
       todayIntake: intake,
       dailyGoal: goal,
@@ -78,26 +194,37 @@ class WaterBloc extends Bloc<WaterEvent, WaterState> {
       locale: locale,
       selectedCupSize: selectedCupSize,
       customCups: customCups,
+      currentStreak: currentStreak,
+      longestStreak: longestStreak,
+      weeklyData: weeklyData,
     ));
   }
 
   Future<void> _onAddWater(AddWater event, Emitter<WaterState> emit) async {
     final addAmount = event.amount ?? state.selectedCupSize;
     final newIntake = state.todayIntake + addAmount;
-    
+
     final box = Hive.box<WaterModel>(boxName);
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    
+
     final data = box.get(today) ?? WaterModel(date: today, intake: 0, goal: state.dailyGoal);
     data.intake = newIntake;
     await box.put(today, data);
-    
+
     final history = box.values.toList();
     history.sort((a, b) => b.date.compareTo(a.date));
+
+    // Recalculate streaks and weekly data
+    final currentStreak = _calculateCurrentStreak(history);
+    final longestStreak = _calculateLongestStreak(history);
+    final weeklyData = _generateWeeklyData(history, state.dailyGoal);
 
     emit(state.copyWith(
       todayIntake: newIntake,
       history: history,
+      currentStreak: currentStreak,
+      longestStreak: longestStreak,
+      weeklyData: weeklyData,
     ));
   }
 

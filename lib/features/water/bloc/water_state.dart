@@ -12,6 +12,9 @@ class WaterState extends Equatable {
   final List<WaterModel> history;
   final String locale;
   final List<int> customCups;
+  final int currentStreak;
+  final int longestStreak;
+  final List<WeeklyData> weeklyData;
 
   const WaterState({
     this.todayIntake = 0,
@@ -24,6 +27,9 @@ class WaterState extends Equatable {
     this.history = const [],
     this.locale = 'en',
     this.customCups = const [],
+    this.currentStreak = 0,
+    this.longestStreak = 0,
+    this.weeklyData = const [],
   });
 
   double get progress => dailyGoal > 0 ? todayIntake / dailyGoal : 0.0;
@@ -39,6 +45,9 @@ class WaterState extends Equatable {
     List<WaterModel>? history,
     String? locale,
     List<int>? customCups,
+    int? currentStreak,
+    int? longestStreak,
+    List<WeeklyData>? weeklyData,
   }) {
     return WaterState(
       todayIntake: todayIntake ?? this.todayIntake,
@@ -51,6 +60,9 @@ class WaterState extends Equatable {
       history: history ?? this.history,
       locale: locale ?? this.locale,
       customCups: customCups ?? this.customCups,
+      currentStreak: currentStreak ?? this.currentStreak,
+      longestStreak: longestStreak ?? this.longestStreak,
+      weeklyData: weeklyData ?? this.weeklyData,
     );
   }
 
@@ -66,5 +78,25 @@ class WaterState extends Equatable {
         history,
         locale,
         customCups,
+        currentStreak,
+        longestStreak,
+        weeklyData,
       ];
+}
+
+class WeeklyData extends Equatable {
+  final String day;
+  final int intake;
+  final int goal;
+  final double percentage;
+
+  const WeeklyData({
+    required this.day,
+    required this.intake,
+    required this.goal,
+    required this.percentage,
+  });
+
+  @override
+  List<Object?> get props => [day, intake, goal, percentage];
 }

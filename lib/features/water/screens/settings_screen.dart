@@ -51,7 +51,6 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildSection(context, l10n.notifications, [
                     _buildNotificationCard(context, state),
-                    _buildPermissionCard(context),
                   ]),
                   const SizedBox(height: 24),
                   _buildSection(context, l10n.personalInfo, [
@@ -154,138 +153,6 @@ class SettingsScreen extends StatelessWidget {
         subtitle: Text(frequencyText),
         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
         onTap: () => _showFrequencyDialog(context, state),
-      ),
-    );
-  }
-
-  Widget _buildPermissionCard(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return _buildSettingsCard(
-      context,
-      child: FutureBuilder<Map<String, bool>>(
-        future: NotificationService.requestPermissions(),
-        builder: (context, snapshot) {
-          final status = snapshot.data;
-          final exactAlarmOn = status?['exactAlarm'] ?? false;
-          final notificationsOn = status?['notifications'] ?? false;
-
-          return Column(
-            children: [
-              _buildPermissionItem(
-                context,
-                icon: Icons.alarm,
-                title: l10n.exactAlarmPermission,
-                isGranted: exactAlarmOn,
-                onTap: () async {
-                  final success = await NotificationService.openExactAlarmSettings();
-                  if (!success) {
-                    _showErrorSnackBar(context, 'Could not open settings. Please check manually.');
-                  }
-                },
-              ),
-              const Divider(height: 20),
-              _buildPermissionItem(
-                context,
-                icon: Icons.battery_charging_full,
-                title: l10n.batteryOptimization,
-                subtitle: 'Prevent background kills',
-                isGranted: true, // We can't check this easily
-                actionLabel: 'Open',
-                onTap: () async {
-                  final success = await NotificationService.openBatteryOptimizationSettings();
-                  if (!success) {
-                    _showErrorSnackBar(context, 'Could not open settings. Please check manually.');
-                  }
-                },
-              ),
-              const Divider(height: 20),
-              _buildPermissionItem(
-                context,
-                icon: Icons.notifications_active,
-                title: 'Notification Status',
-                isGranted: notificationsOn,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPermissionItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required bool isGranted,
-    String? actionLabel,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (isGranted ? Colors.green : Colors.orange).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: isGranted ? Colors.green : Colors.orange,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (onTap != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: WaterReminderApp.primaryWater.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  actionLabel ?? (isGranted ? 'Granted' : 'Grant'),
-                  style: TextStyle(
-                    color: WaterReminderApp.primaryWaterDark,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              )
-            else
-              Icon(
-                isGranted ? Icons.check_circle : Icons.cancel,
-                color: isGranted ? Colors.green : Colors.orange,
-              ),
-          ],
-        ),
       ),
     );
   }
@@ -691,17 +558,6 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('Clear', style: TextStyle(color: Colors.white)),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       ),
     );
   }
